@@ -9,6 +9,8 @@
 
 export type LL<A> = null | [A, LL<A>];
 
+export type LR<A> = null | [LR<A>, A];
+
 function empty<I>(): LL<I> {
   return null;
 }
@@ -21,10 +23,10 @@ function snoc<A>(d: LL<A>, a: A): LL<A> {
   return cons(a, d);
 }
 
-function revappend<A>(l: LL<A>, r: LL<A>) {
+function revappend<A>(l: LR<A>, r: LL<A>) {
   while (l !== null) {
-    r = cons(l[0], r);
-    l = l[1];
+    r = cons(l[1], r);
+    l = l[0];
   }
   return r;
 }
@@ -37,9 +39,9 @@ function section<T>(tag: T, list: LL<Tree<T>>): Tree<T> {
 
 export type Path<T> =
   | { type: "top" }
-  | { type: "node"; tag: T; l: LL<Tree<T>>; p: Path<T>; r: LL<Tree<T>> };
+  | { type: "node"; tag: T; l: LR<Tree<T>>; p: Path<T>; r: LL<Tree<T>> };
 
-function node<T>(tag: T, l: LL<Tree<T>>, p: Path<T>, r: LL<Tree<T>>): Path<T> {
+function node<T>(tag: T, l: LR<Tree<T>>, p: Path<T>, r: LL<Tree<T>>): Path<T> {
   return { type: "node", tag, l, p, r };
 }
 
@@ -55,8 +57,8 @@ export function go_left<T>({ t, p }: Loc<T>): Loc<T> {
       throw new Error("left of top");
     case "node":
       if (p.l === null) throw new Error("left of first");
-      const [l, left] = p.l;
-      return loc(l, node(p.tag, left, p.p, [t, p.r]));
+      const [leftleft, left] = p.l;
+      return loc(left, node(p.tag, leftleft, p.p, [t, p.r]));
   }
 }
 
@@ -66,8 +68,8 @@ export function go_right<T>({ t, p }: Loc<T>): Loc<T> {
       throw new Error("right of top");
     case "node":
       if (p.r === null) throw new Error("right of last");
-      const [r, right] = p.r;
-      return loc(r, node(p.tag, [t, p.l], p.p, right));
+      const [right, rightright] = p.r;
+      return loc(right, node(p.tag, [p.l, t], p.p, rightright));
   }
 }
 

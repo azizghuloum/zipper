@@ -9,6 +9,8 @@
 
 export type LL<A> = null | [A, LL<A>];
 
+export type LR<A> = null | [LR<A>, A];
+
 function empty<I>(): LL<I> {
   return null;
 }
@@ -16,14 +18,15 @@ function empty<I>(): LL<I> {
 function cons<A>(a: A, d: LL<A>): LL<A> {
   return [a, d];
 }
+
 function snoc<A>(d: LL<A>, a: A): LL<A> {
   return cons(a, d);
 }
 
-function revappend<A>(l: LL<A>, r: LL<A>) {
+function revappend<A>(l: LR<A>, r: LL<A>) {
   while (l !== null) {
-    r = cons(l[0], r);
-    l = l[1];
+    r = cons(l[1], r);
+    l = l[0];
   }
   return r;
 }
@@ -42,9 +45,9 @@ function section<I>(list: LL<Tree<I>>): Tree<I> {
 
 export type Path<I> =
   | { type: "top" }
-  | { type: "node"; l: LL<Tree<I>>; p: Path<I>; r: LL<Tree<I>> };
+  | { type: "node"; l: LR<Tree<I>>; p: Path<I>; r: LL<Tree<I>> };
 
-function node<I>(l: LL<Tree<I>>, p: Path<I>, r: LL<Tree<I>>): Path<I> {
+function node<I>(l: LR<Tree<I>>, p: Path<I>, r: LL<Tree<I>>): Path<I> {
   return { type: "node", l, p, r };
 }
 
@@ -60,8 +63,8 @@ export function go_left<I>({ t, p }: Loc<I>): Loc<I> {
       throw new Error("left of top");
     case "node":
       if (p.l === null) throw new Error("left of first");
-      const [l, left] = p.l;
-      return loc(l, node(left, p.p, [t, p.r]));
+      const [leftleft, left] = p.l;
+      return loc(left, node(leftleft, p.p, [t, p.r]));
   }
 }
 
@@ -71,8 +74,8 @@ export function go_right<I>({ t, p }: Loc<I>): Loc<I> {
       throw new Error("right of top");
     case "node":
       if (p.r === null) throw new Error("right of last");
-      const [r, right] = p.r;
-      return loc(r, node([t, p.l], p.p, right));
+      const [right, rightright] = p.r;
+      return loc(right, node([p.l, t], p.p, rightright));
   }
 }
 
