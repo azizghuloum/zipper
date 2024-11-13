@@ -115,48 +115,52 @@ export function change<T, I>({ p }: Loc<T, I>, t: Tree<T, I>): Loc<T, I> {
 
 /* some helpers */
 
-type TR<T, I> =
-  | { type: "leaf"; value: I }
-  | { type: "node"; tag: T; children: TR<T, I>[] };
+type converter<T, I, X> = (
+  x: X,
+  atom: (a: I) => Tree<T, I>,
+  list: (tag: T, children: X[]) => Tree<T, I>
+) => Tree<T, I>;
 
-export function convert_tree<T, I>(x: TR<T, I>): Tree<T, I> {
-  switch (x.type) {
-    case "leaf":
-      return item(x.value);
-    case "node":
-      return section(
-        x.tag,
-        x.children.map(convert_tree).reduceRight(snoc, empty())
-      );
-  }
+export function convert_tree<T, I, X>(x: X, f: converter<T, I, X>): Tree<T, I> {
+  return f(x, item, (tag, ls) =>
+    section(tag, ls.map((x) => convert_tree(x, f)).reduceRight(snoc, empty()))
+  );
 }
 
-export function unconvert_tree<T, I>(tree: Tree<T, I>): TR<T, I> {
+export function unconvert_tree<T, I, X>(
+  tree: Tree<T, I>,
+  item: (item: I) => X,
+  list: (tag: T, children: X[]) => X
+): X {
   switch (tree.type) {
     case "item":
-      return { type: "leaf", value: tree.item };
+      return item(tree.item);
     case "section": {
-      const a: TR<T, I>[] = [];
+      const children: X[] = [];
       let x = tree.list;
       while (x !== null) {
-        a.push(unconvert_tree(x[0]));
+        children.push(unconvert_tree(x[0], item, list));
         x = x[1];
       }
-      return { type: "node", tag: tree.tag, children: a };
+      return list(tree.tag, children);
     }
   }
 }
 
-export function convert<T, I>(tree: TR<T, I>): Loc<T, I> {
-  return loc(convert_tree(tree), { type: "top" });
+export function convert<T, I, X>(tree: X, f: converter<T, I, X>): Loc<T, I> {
+  return loc(convert_tree(tree, f), { type: "top" });
 }
 
-export function unconvert<T, I>(loc: Loc<T, I>): TR<T, I> {
+export function unconvert<T, I, X>(
+  loc: Loc<T, I>,
+  item: (item: I) => X,
+  list: (tag: T, children: X[]) => X
+): X {
   switch (loc.p.type) {
     case "top":
-      return unconvert_tree(loc.t);
+      return unconvert_tree(loc.t, item, list);
     case "node":
-      return unconvert(go_up(loc));
+      return unconvert(go_up(loc), item, list);
   }
 }
 
