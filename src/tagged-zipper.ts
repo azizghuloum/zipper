@@ -153,15 +153,30 @@ export function convert<T, I, X>(tree: X, f: converter<T, I, X>): Loc<T, I> {
 
 export function unconvert<T, I, X>(
   loc: Loc<T, I>,
+  mark: (x: X) => X,
   item: (item: I) => X,
   list: (tag: T, children: X[]) => X
 ): X {
-  switch (loc.p.type) {
-    case "top":
-      return unconvert_tree(loc.t, item, list);
-    case "node":
-      return unconvert(go_up(loc), item, list);
+  let x = mark(unconvert_tree(loc.t, item, list));
+  let p = loc.p;
+  while (p.type !== "top") {
+    let ac: X[] = [];
+    let l = p.l;
+    while (l) {
+      ac.push(unconvert_tree(l[0], item, list));
+      l = l[1];
+    }
+    ac.reverse();
+    ac.push(x);
+    let r = p.r;
+    while (r) {
+      ac.push(unconvert_tree(r[0], item, list));
+      r = r[1];
+    }
+    x = list(p.tag, ac);
+    p = p.p;
   }
+  return x;
 }
 
 /* */
