@@ -1,9 +1,9 @@
 /* */
 
-export * as HuetZipper from "./huet-zipper";
+export * as HuetZipper from "./huet-zipper.ts";
 
-export * as TaggedZipper from "./tagged-zipper";
+export * as TaggedZipper from "./tagged-zipper.ts";
 
-export * as ItemlessTaggedZipper from "./itemless-tagged-zipper";
+export * as ItemlessTaggedZipper from "./itemless-tagged-zipper.ts";
 
-export * as TaggedReconstructiveZipper from "./tagged-constructive-zipper";
+export * as TaggedReconstructiveZipper from "./tagged-constructive-zipper.ts";
